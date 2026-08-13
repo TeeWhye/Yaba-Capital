@@ -1,0 +1,226 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Record Repayment · Yaba Capital{% endblock %}
+
+{% block content %}
+
+<div class="auth-card repayment-page">
+
+    <a
+        href="{% url 'staff_application_detail' loan.application.id %}"
+        class="back-link"
+    >
+        ← Back to application
+    </a>
+
+    <div class="repayment-header">
+
+        <div>
+            <p class="eyebrow">Loan repayment</p>
+
+            <h1>Record Repayment</h1>
+
+            <p class="sub">
+                {{ loan.borrower.business_name }}
+            </p>
+        </div>
+
+        <div class="loan-amount">
+            ₦{{ loan.total_repayment }}
+        </div>
+
+    </div>
+
+
+    <div class="loan-summary">
+
+        <div class="summary-item">
+            <span>Principal</span>
+            <strong>₦{{ loan.principal }}</strong>
+        </div>
+
+        <div class="summary-item">
+            <span>Total repayment</span>
+            <strong>₦{{ loan.total_repayment }}</strong>
+        </div>
+
+        <div class="summary-item">
+            <span>Loan status</span>
+            <strong>{{ loan.get_status_display }}</strong>
+        </div>
+
+        <div class="summary-item">
+            <span>Due date</span>
+            <strong>
+                {{ loan.due_date|date:"d M Y" }}
+            </strong>
+        </div>
+
+    </div>
+
+
+    <div class="detail-section">
+
+        <h2>Payment information</h2>
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+            <button
+                type="submit"
+                class="btn-primary"
+            >
+                Record Repayment
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<style>
+
+.repayment-page {
+    max-width: 700px;
+    margin: 60px auto;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 28px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.repayment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 30px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+}
+
+.eyebrow {
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+}
+
+.repayment-header h1 {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+}
+
+.sub {
+    margin-top: 6px;
+}
+
+.loan-amount {
+    font-size: 1.3rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.loan-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 28px;
+}
+
+.summary-item {
+    padding: 14px;
+    background: #f8fafc;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+}
+
+.summary-item span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    margin-bottom: 5px;
+}
+
+.summary-item strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+}
+
+.detail-section {
+    margin-top: 32px;
+    padding-top: 26px;
+    border-top: 1px solid var(--line);
+}
+
+.detail-section h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    margin-bottom: 18px;
+}
+
+form p {
+    margin-bottom: 16px;
+}
+
+form label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+form input,
+form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    font-family: inherit;
+}
+
+form textarea {
+    resize: vertical;
+}
+
+.btn-primary {
+    margin-top: 8px;
+    border: none;
+    padding: 11px 18px;
+    border-radius: var(--radius-s);
+    background: var(--indigo-700);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+@media (max-width: 600px) {
+
+    .repayment-page {
+        margin: 30px 15px;
+    }
+
+    .repayment-header {
+        flex-direction: column;
+    }
+
+    .loan-summary {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
+
+{% endblock %}

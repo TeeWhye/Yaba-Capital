@@ -1,0 +1,293 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yaba Capital — Working capital for growing businesses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a href="#" class="logo"><span class="logo-mark"></span>Yaba Capital</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#products">Products</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#why">Why us</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <a href="#apply" class="btn btn-dark">Apply now</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Business loans for Lagos MSMEs</p>
+      <h1>Capital that moves at market speed.</h1>
+      <p class="lead">Yaba Capital gets working capital into the hands of traders, makers and small business owners — often within 24 hours of applying, no collateral required for qualifying loans.</p>
+      <div class="hero-actions">
+        <a href="#apply" class="btn btn-primary">Start an application</a>
+        <a href="#products" class="btn btn-ghost">See loan products</a>
+      </div>
+      <div class="hero-trust">
+        <div><strong>42</strong><span>Branches nationwide</span></div>
+        <div><strong>18,600+</strong><span>Businesses funded</span></div>
+        <div><strong>24hrs</strong><span>Average approval time</span></div>
+      </div>
+    </div>
+
+    <div class="calc-card" id="apply">
+      <h3>Estimate your loan</h3>
+      <p class="calc-sub">Drag to see an example repayment. For illustration only — your actual offer depends on review.</p>
+
+      <div class="calc-row">
+        <div class="calc-label"><span>Loan amount</span><span class="val mono" id="amountVal">₦150,000</span></div>
+        <input type="range" id="amountSlider" min="20000" max="1000000" step="10000" value="150000">
+      </div>
+
+      <div class="calc-row">
+        <div class="calc-label"><span>Repayment plan</span></div>
+        <div class="term-toggle">
+          <button type="button" class="active" data-term="daily">Daily</button>
+          <button type="button" data-term="weekly">Weekly</button>
+        </div>
+      </div>
+
+      <div class="calc-result">
+        <div>
+          <span id="planLabel">Est. daily repayment</span>
+          <strong class="mono" id="repayVal">₦1,340</strong>
+        </div>
+        <div style="text-align:right">
+          <span>Over</span>
+          <strong class="mono" id="termVal">120 days</strong>
+        </div>
+      </div>
+      <p class="calc-note">Flat rate used for estimate: 5% per cycle. Final rate and term are confirmed after application review.</p>
+    </div>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="wrap">
+    <div class="stat"><strong>₦4.2bn+</strong><span>Disbursed to date</span></div>
+    <div class="stat"><strong>96%</strong><span>Repeat customer rate</span></div>
+    <div class="stat"><strong>2011</strong><span>Founded in Yaba, Lagos</span></div>
+    <div class="stat"><strong>4.7/5</strong><span>Average borrower rating</span></div>
+  </div>
+</div>
+
+<section id="products">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Products & services</p>
+      <h2>Three ways to fund your business</h2>
+      <p>Every product is built around how small businesses actually make money — daily sales, weekly cycles, or seasonal growth pushes.</p>
+    </div>
+
+    <div class="products-grid">
+      <div class="product-card reveal">
+        <span class="product-tag">Daily</span>
+        <h3>Daily Trade Loan</h3>
+        <p class="product-rate">₦20k <small>– ₦300k</small></p>
+        <p class="product-desc">Short, fast-turnaround capital for market traders who restock frequently. Repay in small daily instalments that match your sales rhythm.</p>
+        <a href="#contact" class="btn btn-dark">Learn more</a>
+      </div>
+
+      <div class="product-card highlight reveal">
+        <span class="product-tag">Most popular · Weekly</span>
+        <h3>Weekly Growth Loan</h3>
+        <p class="product-rate">₦50k <small>– ₦1m</small></p>
+        <p class="product-desc ink-soft">Larger loans with weekly repayments — built for shop owners and service businesses managing inventory or staff costs.</p>
+        <a href="#contact" class="btn btn-primary">Learn more</a>
+      </div>
+
+      <div class="product-card reveal">
+        <span class="product-tag">Seasonal</span>
+        <h3>Business Expansion Loan</h3>
+        <p class="product-rate">₦200k <small>– ₦3m</small></p>
+        <p class="product-desc">Longer-term financing for a second location, new equipment, or bulk seasonal stock — with a structured monthly plan.</p>
+        <a href="#contact" class="btn btn-dark">Learn more</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="process" id="how-it-works">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">The process</p>
+      <h2>From application to funded, in four steps</h2>
+    </div>
+
+    <div class="process-grid">
+      <div class="process-step reveal">
+        <span class="step-num">01</span>
+        <h3>Apply online</h3>
+        <p>Fill a short form with your business details — takes about five minutes, no paperwork required upfront.</p>
+      </div>
+      <div class="process-step reveal">
+        <span class="step-num">02</span>
+        <h3>We review</h3>
+        <p>A loan officer looks at your business activity and confirms your eligible amount, usually same-day.</p>
+      </div>
+      <div class="process-step reveal">
+        <span class="step-num">03</span>
+        <h3>Get funded</h3>
+        <p>Once approved, funds are sent straight to your bank or wallet — most borrowers receive funds within 24 hours.</p>
+      </div>
+      <div class="process-step reveal">
+        <span class="step-num">04</span>
+        <h3>Repay & grow</h3>
+        <p>Repay on the schedule you chose. On-time repayment unlocks larger limits on your next loan.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Why Yaba Capital</p>
+      <h2>Built around how small businesses actually run</h2>
+    </div>
+
+    <div class="why-grid reveal">
+      <div class="why-item">
+        <div class="why-icon">₦</div>
+        <h3>No collateral, most loans</h3>
+        <p>Qualifying loan sizes are unsecured — your trading history speaks for you.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-icon">24</div>
+        <h3>Fast decisions</h3>
+        <p>Applications are reviewed within a working day, not weeks.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-icon">↗</div>
+        <h3>Limits that grow with you</h3>
+        <p>Repay on time and your next available loan amount increases automatically.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-icon">◔</div>
+        <h3>Flexible repayment</h3>
+        <p>Choose daily or weekly instalments to match your actual cash flow.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-icon">◈</div>
+        <h3>42 branches</h3>
+        <p>Real people at real locations across Nigeria — not just a call centre.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-icon">✓</div>
+        <h3>Transparent pricing</h3>
+        <p>You see the full repayment amount before you accept — no hidden charges.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="testimonial">
+  <div class="wrap reveal">
+    <blockquote>
+      “I used my first loan to restock ahead of December. By the time it was due, I'd already sold through — repaying early got me a bigger limit for the next one.”
+      <cite>— Amaka O., fabric trader, Balogun Market</cite>
+    </blockquote>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Questions</p>
+      <h2>Frequently asked</h2>
+    </div>
+
+    <div class="faq-list reveal">
+      <details>
+        <summary>Do I need collateral to apply?</summary>
+        <p>Most Daily and Weekly loans are unsecured and based on your business's trading history. Larger Expansion Loans may require security depending on the amount requested.</p>
+      </details>
+      <details>
+        <summary>How fast will I receive funds?</summary>
+        <p>Most applicants receive a decision within one working day, and funds are disbursed shortly after acceptance — typically within 24 hours of approval.</p>
+      </details>
+      <details>
+        <summary>What documents do I need?</summary>
+        <p>A valid ID, proof of business (such as a shop address or trading history), and a bank account or wallet to receive funds. Additional documents may be requested for larger loans.</p>
+      </details>
+      <details>
+        <summary>What happens if I repay early?</summary>
+        <p>Early repayment is encouraged — a clean repayment history increases the amount you're eligible for on your next loan.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta-banner reveal">
+      <h2>Ready to fund your next restock?</h2>
+      <a href="#apply" class="btn btn-dark">Apply in 5 minutes</a>
+    </div>
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="logo"><span class="logo-mark"></span>Yaba Capital</a>
+        <p>Working capital for market traders and small business owners across Nigeria.</p>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About us</a></li>
+          <li><a href="#">Branches</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Blog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Products</h4>
+        <ul>
+          <li><a href="#products">Daily Trade Loan</a></li>
+          <li><a href="#products">Weekly Growth Loan</a></li>
+          <li><a href="#products">Expansion Loan</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="tel:+2349130000000">+234 913 000 0000</a></li>
+          <li><a href="mailto:hello@yabacapital.ng">hello@yabacapital.ng</a></li>
+          <li>Herbert Macaulay Way, Yaba, Lagos</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Yaba Capital. All rights reserved.</span>
+      <span>Registered lender · Terms apply</span>
+    </div>
+  </div>
+</footer>
+
+<script src="{% static 'js/main.js' %}"></script>
+
+{% endblock %}

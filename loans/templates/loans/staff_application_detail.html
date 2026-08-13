@@ -1,0 +1,479 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Review Application · Yaba Capital{% endblock %}
+
+{% block content %}
+
+<div class="auth-card application-detail">
+
+    <a href="{% url 'staff_applications' %}" class="back-link">
+        ← Back to applications
+    </a>
+
+    <div class="detail-header">
+
+        <div>
+            <p class="eyebrow">Staff review</p>
+
+            <h1>{{ application.product.name }}</h1>
+
+            <p class="sub">
+                {{ application.borrower.business_name }}
+            </p>
+        </div>
+
+        <div class="detail-amount">
+            ₦{{ application.amount_requested }}
+        </div>
+
+    </div>
+
+
+    <!-- CURRENT STATUS -->
+
+    <div class="detail-status">
+
+        <span class="detail-label">
+            Current status:
+        </span>
+
+        <span class="status-badge {{ application.status }}">
+            {{ application.get_status_display }}
+        </span>
+
+    </div>
+
+
+    <!-- APPLICATION INFORMATION -->
+
+    <div class="detail-section">
+
+        <h2>Application information</h2>
+
+        <div class="detail-grid">
+
+            <div class="detail-item">
+                <span>Borrower</span>
+                <strong>
+                    {{ application.borrower.business_name }}
+                </strong>
+            </div>
+
+            <div class="detail-item">
+                <span>Loan product</span>
+                <strong>
+                    {{ application.product.name }}
+                </strong>
+            </div>
+
+            <div class="detail-item">
+                <span>Amount requested</span>
+                <strong>
+                    ₦{{ application.amount_requested }}
+                </strong>
+            </div>
+
+            <div class="detail-item">
+                <span>Interest rate</span>
+                <strong>
+                    {{ application.product.interest_rate }}%
+                </strong>
+            </div>
+
+            <div class="detail-item">
+                <span>Application date</span>
+                <strong>
+                    {{ application.applied_at|date:"d M Y, H:i" }}
+                </strong>
+            </div>
+
+            <div class="detail-item full-width">
+                <span>Purpose</span>
+                <strong>
+                    {{ application.purpose }}
+                </strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- REVIEW ACTIONS -->
+
+    <div class="detail-section">
+
+        <h2>Review application</h2>
+
+        {% if application.status == 'pending' %}
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    name="action"
+                    value="under_review"
+                    class="btn-primary"
+                >
+                    Mark Under Review
+                </button>
+
+            </form>
+
+        {% elif application.status == 'under_review' %}
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <label for="reviewer_note">
+                    Reviewer note
+                </label>
+
+                <textarea
+                    id="reviewer_note"
+                    name="reviewer_note"
+                    rows="5"
+                    placeholder="Enter your review note..."
+                ></textarea>
+
+                <div class="review-actions">
+
+                    <button
+                        type="submit"
+                        name="action"
+                        value="approved"
+                        class="btn-primary"
+                    >
+                        Approve Application
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="action"
+                        value="rejected"
+                        class="btn-danger"
+                    >
+                        Reject Application
+                    </button>
+
+                </div>
+
+            </form>
+
+        {% elif application.status == 'approved' %}
+
+              <p>
+        This application has been approved and is ready for disbursement.
+    </p>
+
+    <form method="POST" style="margin-top: 18px;">
+
+        {% csrf_token %}
+
+        <button
+            type="submit"
+            name="action"
+            value="disbursed"
+            class="btn-primary"
+        >
+            Disburse Loan
+        </button>
+
+    </form>
+
+    {% elif application.status == 'active' %}
+
+    <p>
+        This loan has been disbursed and is currently active.
+    </p>
+
+    {% if application.loan %}
+
+        <div style="margin-top: 18px;">
+
+            <p>
+                <strong>Disbursed on:</strong>
+
+                {% if application.loan.disbursed_at %}
+                    {{ application.loan.disbursed_at|date:"d M Y, H:i" }}
+                {% else %}
+                    Not available
+                {% endif %}
+            </p>
+
+            <p>
+                <strong>Outstanding balance:</strong>
+                ₦{{ application.loan.outstanding_balance|floatformat:2 }}
+            </p>
+
+        </div>
+
+        <a
+            href="{% url 'record_repayment' application.loan.id %}"
+            class="btn-primary"
+            style="
+                display: inline-block;
+                margin-top: 18px;
+                text-decoration: none;
+            "
+        >
+            Record Repayment
+        </a>
+
+    {% endif %}
+
+
+        {% elif application.status == 'rejected' %}
+
+            <p>
+                This application has already been rejected.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- REVIEWER NOTE -->
+
+    {% if application.reviewer_note %}
+
+        <div class="detail-section">
+
+            <h2>Reviewer note</h2>
+
+            <div class="reviewer-note">
+
+                <p>
+                    {{ application.reviewer_note }}
+                </p>
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+    <div class="last-updated">
+
+        Last updated:
+        {{ application.updated_at|date:"d M Y, H:i" }}
+
+    </div>
+
+</div>
+
+
+<style>
+
+.application-detail {
+    max-width: 760px;
+    margin: 60px auto;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 28px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 30px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+}
+
+.eyebrow {
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+}
+
+.detail-header h1 {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+}
+
+.sub {
+    margin-top: 6px;
+}
+
+.detail-amount {
+    font-size: 1.3rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.detail-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.detail-label {
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.under_review {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status-badge.approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.detail-section {
+    margin-top: 32px;
+    padding-top: 26px;
+    border-top: 1px solid var(--line);
+}
+
+.detail-section h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    margin-bottom: 18px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.detail-item span {
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+}
+
+.detail-item strong {
+    font-size: 0.9rem;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    font-family: inherit;
+    resize: vertical;
+}
+
+.review-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.btn-primary,
+.btn-danger {
+    border: none;
+    padding: 10px 16px;
+    border-radius: var(--radius-s);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: var(--indigo-700);
+    color: white;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+}
+
+.reviewer-note {
+    padding: 15px 16px;
+    background: #f3f5fa;
+    border-left: 3px solid var(--indigo-700);
+    border-radius: var(--radius-s);
+}
+
+.reviewer-note p {
+    margin: 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
+}
+
+.last-updated {
+    margin-top: 30px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+}
+
+@media (max-width: 600px) {
+
+    .application-detail {
+        margin: 30px 15px;
+    }
+
+    .detail-header {
+        flex-direction: column;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full-width {
+        grid-column: auto;
+    }
+
+    .review-actions {
+        flex-direction: column;
+    }
+
+}
+
+</style>
+
+{% endblock %}

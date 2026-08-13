@@ -1,0 +1,381 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Active Loans · Yaba Capital{% endblock %}
+
+{% block content %}
+
+<div class="auth-card staff-loans">
+
+    <div class="page-header">
+
+        <div>
+            <p class="eyebrow">Yaba Capital · Operations</p>
+
+            <h1>Loans</h1>
+
+            <p class="sub">
+                Monitor active and completed loans.
+            </p>
+        </div>
+
+        <a
+            href="{% url 'staff_dashboard' %}"
+            class="back-link"
+        >
+            ← Staff Dashboard
+        </a>
+
+    </div>
+
+
+    {% if loans %}
+
+        <div class="loan-list">
+
+            {% for loan in loans %}
+
+                <div class="loan-row">
+
+                    <div class="loan-borrower">
+
+                        <strong>
+                            {{ loan.borrower.business_name }}
+                        </strong>
+
+                        <span>
+                            {{ loan.application.product.name }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="loan-amount">
+
+                        <span>Principal</span>
+
+                        <strong>
+                            ₦{{ loan.principal|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="loan-amount">
+
+                        <span>Outstanding</span>
+
+                        <strong>
+                            ₦{{ loan.outstanding_balance|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+                    <div class="loan-amount">
+
+    <span>Repayment</span>
+
+    <strong>
+        {{ loan.repayment_percentage|floatformat:0 }}%
+    </strong>
+
+</div>
+
+
+                    <div class="loan-due">
+
+    <span>Due date</span>
+
+    <strong>
+        {{ loan.due_date|date:"d M Y" }}
+    </strong>
+
+    {% if loan.loan_state == 'overdue' %}
+
+        <small class="overdue-text">
+    {{ loan.days_difference|stringformat:"d"|cut:"-" }} days overdue
+</small>
+
+    {% elif loan.loan_state == 'due_soon' %}
+
+        <small class="due-soon-text">
+            Due in {{ loan.days_difference }} days
+        </small>
+
+    {% elif loan.loan_state == 'active' %}
+
+        <small class="active-text">
+            {{ loan.days_difference }} days remaining
+        </small>
+
+    {% elif loan.loan_state == 'repaid' %}
+
+        <small class="repaid-text">
+            Loan completed
+        </small>
+
+    {% endif %}
+
+</div>
+
+
+                    <div>
+
+    {% if loan.loan_state == 'overdue' %}
+
+        <span class="status-badge overdue">
+            Overdue
+        </span>
+
+    {% elif loan.loan_state == 'due_soon' %}
+
+        <span class="status-badge due-soon">
+            Due Soon
+        </span>
+
+    {% elif loan.loan_state == 'repaid' %}
+
+        <span class="status-badge repaid">
+            Repaid
+        </span>
+
+    {% else %}
+
+        <span class="status-badge active">
+            Active
+        </span>
+
+    {% endif %}
+
+</div>
+
+
+                    <a
+                        href="{% url 'staff_application_detail' loan.application.id %}"
+                        class="view-link"
+                    >
+                        View →
+                    </a>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state">
+
+            <p>
+                No active or repaid loans yet.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<style>
+
+.staff-loans {
+    max-width: 1100px;
+    margin: 60px auto;
+}
+
+
+/* HEADER */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.7rem;
+}
+
+.eyebrow {
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+}
+
+.back-link {
+    color: var(--indigo-700);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+
+/* LOAN LIST */
+
+.loan-list {
+    border-top: 1px solid var(--line);
+}
+
+.loan-row {
+    display: grid;
+    grid-template-columns:
+    1.5fr
+    1fr
+    1fr
+    1fr
+    1fr
+    auto
+    auto;
+
+    align-items: center;
+
+    gap: 20px;
+
+    padding: 18px 0;
+
+    border-bottom: 1px solid var(--line);
+}
+
+.loan-borrower strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.loan-borrower span {
+    display: block;
+    margin-top: 4px;
+    color: var(--ink-soft);
+    font-size: 0.76rem;
+}
+
+.loan-amount span,
+.loan-due span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+}
+
+.loan-amount strong,
+.loan-due strong {
+    font-size: 0.85rem;
+}
+
+
+/* STATUS */
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.status-badge.active {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.status-badge.repaid {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.due-soon {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.overdue {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+
+/* VIEW */
+
+.view-link {
+    color: var(--indigo-700);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.view-link:hover {
+    text-decoration: underline;
+}
+
+
+/* EMPTY */
+
+.empty-state {
+    padding: 30px 0;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 950px) {
+
+    .loan-row {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .staff-loans {
+        margin: 30px 15px;
+    }
+
+    .page-header {
+        flex-direction: column;
+    }
+
+    .loan-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+}
+
+.loan-due small {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.72rem;
+}
+
+.overdue-text {
+    color: #991b1b;
+}
+
+.due-soon-text {
+    color: #856404;
+}
+
+.active-text {
+    color: var(--ink-soft);
+}
+
+.repaid-text {
+    color: #065f46;
+}
+
+</style>
+
+{% endblock %}

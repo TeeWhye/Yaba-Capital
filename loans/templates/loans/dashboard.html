@@ -1,0 +1,1176 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Your applications · Yaba Capital{% endblock %}
+
+{% block content %}
+
+<div class="auth-card">
+
+<h1>Your applications</h1>
+
+<a href="{% url 'apply' %}" class="btn-primary">
+    Apply for a Loan
+</a>
+
+<p class="sub">
+    Track the status of everything you've applied for.
+</p>
+
+<div class="dashboard-summary">
+
+    <div class="summary-card">
+      <span>Total Applications</span>
+      <strong>{{ total_applications }}</strong>
+    </div>
+
+    <div class="summary-card">
+        <span>Pending</span>
+        <strong>{{ pending_count }}</strong>
+    </div>
+
+    <div class="summary-card">
+        <span>Under Review</span>
+        <strong>{{ under_review_count }}</strong>
+    </div>
+
+    <div class="summary-card">
+        <span>Approved</span>
+        <strong>{{ approved_count }}</strong>
+    </div>
+
+    <div class="summary-card">
+        <span>Active Loans</span>
+        <strong>{{ active_loans_count }}</strong>
+    </div>
+
+    <div class="summary-card">
+       <span>Total Outstanding</span>
+       <strong>₦{{ total_outstanding|floatformat:2 }}</strong>
+    </div>
+
+    <div class="summary-card">
+        <span>Repaid</span>
+        <strong>{{ repaid_loans_count }}</strong>
+    </div>
+
+</div>
+
+{% if applications %}
+
+    {% for app in applications %}
+
+        <div class="application-card">
+
+            <div class="application-header">
+
+                <div>
+                    <strong class="product-name">
+                        {{ app.product.name }}
+                    </strong>
+
+                    <div class="application-date">
+                        Applied {{ app.applied_at|date:"d M Y" }}
+                    </div>
+
+                    <a
+                        href="{% url 'application_detail' app.id %}"
+                        class="view-details"
+                       >
+                        View details →
+                    </a>
+
+                </div>
+
+                <span class="amount mono">
+                    ₦{{ app.amount_requested }}
+                </span>
+
+            </div>
+
+
+            <!-- STATUS -->
+
+            <div class="status-row">
+
+                <span>Status</span>
+
+                {% if app.status == 'pending' %}
+                    <span class="status-badge pending">
+                        {{ app.get_status_display }}
+                    </span>
+
+                {% elif app.status == 'under_review' %}
+                    <span class="status-badge under-review">
+                        {{ app.get_status_display }}
+                    </span>
+
+                {% elif app.status == 'approved' %}
+                    <span class="status-badge approved">
+                        {{ app.get_status_display }}
+                    </span>
+
+                {% elif app.status == 'rejected' %}
+                    <span class="status-badge rejected">
+                        {{ app.get_status_display }}
+                    </span>
+
+                {% elif app.status == 'active' %}
+                    <span class="status-badge active">
+                        {{ app.get_status_display }}
+                    </span>
+
+                {% elif app.status == 'repaid' %}
+                    <span class="status-badge repaid">
+                        {{ app.get_status_display }}
+                    </span>
+                {% endif %}
+
+            </div>
+
+
+            <!-- PROGRESS TRACKER -->
+
+            {% if app.status != 'rejected' %}
+
+                <div class="progress-section">
+
+                    <h3>Application progress</h3>
+
+                    <div class="progress-track">
+
+                        <!-- APPLICATION -->
+
+                        <div class="progress-step
+                            {% if app.status == 'pending' or app.status == 'under_review' or app.status == 'approved' or app.status == 'active' or app.status == 'repaid' %}
+                                completed
+                            {% endif %}
+                        ">
+
+                            <div class="progress-dot">✓</div>
+
+                            <div>
+                                <strong>Application submitted</strong>
+                                <span>Your application was received.</span>
+                            </div>
+
+                        </div>
+
+
+                        <!-- REVIEW -->
+
+                        <div class="progress-step
+                            {% if app.status == 'under_review' or app.status == 'approved' or app.status == 'active' or app.status == 'repaid' %}
+                                completed
+                            {% endif %}
+                        ">
+
+                            <div class="progress-dot">✓</div>
+
+                            <div>
+                                <strong>Under review</strong>
+                                <span>Your application is being assessed.</span>
+                            </div>
+
+                        </div>
+
+
+                        <!-- APPROVAL -->
+
+                        <div class="progress-step
+                            {% if app.status == 'approved' or app.status == 'active' or app.status == 'repaid' %}
+                                completed
+                            {% endif %}
+                        ">
+
+                            <div class="progress-dot">✓</div>
+
+                            <div>
+                                <strong>Approved</strong>
+                                <span>Your loan has been approved.</span>
+                            </div>
+
+                        </div>
+
+
+                        <!-- ACTIVE -->
+
+                        <div class="progress-step
+                            {% if app.status == 'active' or app.status == 'repaid' %}
+                                completed
+                            {% endif %}
+                        ">
+
+                            <div class="progress-dot">✓</div>
+
+                            <div>
+                                <strong>Funds disbursed</strong>
+                                <span>Your loan is now active.</span>
+                            </div>
+
+                        </div>
+
+
+                        <!-- REPAID -->
+
+                        <div class="progress-step
+                            {% if app.status == 'repaid' %}
+                                completed
+                            {% endif %}
+                        ">
+
+                            <div class="progress-dot">✓</div>
+
+                            <div>
+                                <strong>Loan repaid</strong>
+                                <span>Your repayment has been completed.</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% else %}
+
+                <!-- REJECTED STATE -->
+
+                <div class="rejected-message">
+
+                    <strong>Application not approved</strong>
+
+                    <p>
+                        Unfortunately, this application was not approved.
+                        Please review the note below for more information.
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+
+            <!-- REVIEWER NOTE -->
+
+            {% if app.reviewer_note %}
+
+                <div class="reviewer-note">
+
+                    <strong>Reviewer note</strong>
+
+                    <p>
+                        {{ app.reviewer_note }}
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+                        {% if app.status == 'approved' or app.status == 'active' or app.status == 'repaid' %}
+
+    {% if app.loan %}
+
+        <div class="loan-summary">
+
+            <div class="loan-summary-header">
+
+                <div>
+                    <strong>Loan details</strong>
+                    <span>Your approved loan</span>
+                </div>
+
+                <span class="loan-status">
+                    {{ app.loan.get_status_display }}
+                </span>
+
+            </div>
+
+            <div class="loan-details-grid">
+
+                <div class="loan-detail">
+                    <span>Principal</span>
+                    <strong>₦{{ app.loan.principal }}</strong>
+                </div>
+
+                <div class="loan-detail">
+                    <span>Interest rate</span>
+                    <strong>{{ app.loan.interest_rate }}%</strong>
+                </div>
+
+                <div class="loan-detail">
+                    <span>Total repayment</span>
+                    <strong>₦{{ app.loan.total_repayment }}</strong>
+                </div>
+
+                <div class="loan-detail">
+                    <span>Total paid</span>
+                    <strong>₦{{ app.loan.total_paid }}</strong>
+                </div>
+
+                <div class="loan-detail">
+                    <span>Outstanding balance</span>
+                    <strong>₦{{ app.loan.outstanding_balance }}</strong>
+                </div>
+
+                <div class="loan-detail">
+    <span>Repayment progress</span>
+
+    <strong>
+        {% if app.loan.status == 'repaid' %}
+            100%
+        {% elif app.loan.total_repayment > 0 %}
+            {% widthratio app.loan.total_paid app.loan.total_repayment 100 %}%
+        {% else %}
+            0%
+        {% endif %}
+    </strong>
+</div>
+
+                <div class="loan-detail">
+                    <span>Due date</span>
+                    <strong>{{ app.loan.due_date|date:"d M Y" }}</strong>
+                </div>
+
+                <div class="loan-detail">
+                    <span>Disbursed on</span>
+
+                    <strong>
+                        {% if app.loan.disbursed_at %}
+                            {{ app.loan.disbursed_at|date:"d M Y, H:i" }}
+                        {% else %}
+                            Not yet disbursed
+                        {% endif %}
+                    </strong>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- REPAYMENT HISTORY -->
+
+        <div class="repayment-history">
+
+            <h3>Repayment history</h3>
+
+            {% for repayment in app.loan.repayments.all %}
+
+                <div class="repayment-item">
+
+                    <div>
+                        <strong>
+                            ₦{{ repayment.amount }}
+                        </strong>
+
+                        <span>
+                            {{ repayment.paid_at|date:"d M Y, H:i" }}
+                        </span>
+                    </div>
+
+                    {% if repayment.note %}
+                        <p>
+                            {{ repayment.note }}
+                        </p>
+                    {% endif %}
+
+                </div>
+
+            {% empty %}
+
+                <p class="no-repayments">
+                    No repayments have been recorded yet.
+                </p>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+{% endif %}
+
+        </div>
+
+    {% endfor %}
+
+{% else %}
+
+    <p style="color:var(--ink-soft);">
+        You haven't applied for a loan yet.
+    </p>
+
+    <a
+        href="{% url 'apply' %}"
+        class="btn btn-primary"
+        style="margin-top:12px;"
+    >
+        Apply now
+    </a>
+
+{% endif %}
+
+
+<!-- LOAN HISTORY -->
+
+{% if repaid_loans %}
+
+    <div class="loan-history">
+
+        <div class="loan-history-header">
+
+            <div>
+                <h2>Loan history</h2>
+
+                <p>
+                    Your completed loans and repayment records.
+                </p>
+            </div>
+
+        </div>
+
+
+        {% for loan in repaid_loans %}
+
+            <div class="history-card">
+
+                <div class="history-main">
+
+                    <div>
+                        <strong>
+                            {{ loan.application.product.name }}
+                        </strong>
+
+                        <span>
+                            Repaid
+                        </span>
+                    </div>
+
+                    <span class="history-status">
+                        Completed
+                    </span>
+
+                </div>
+
+
+                <div class="history-details">
+
+                    <div>
+                        <span>Principal</span>
+                        <strong>
+                            ₦{{ loan.principal }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Total repayment</span>
+                        <strong>
+                            ₦{{ loan.total_repayment }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Total paid</span>
+                        <strong>
+                            ₦{{ loan.total_paid }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Outstanding</span>
+                        <strong>
+                            ₦{{ loan.outstanding_balance }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Repaid on</span>
+                        <strong>
+                            {{ loan.application.updated_at|date:"d M Y" }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Repayment progress</span>
+                        <strong>
+                            100%
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+{% endif %}
+
+</div>
+
+{% if repaid_loans %}
+
+<div class="loan-history">
+
+    <div class="loan-history-header">
+        <h2>Loan History</h2>
+        <p>Completed loans and repayment records.</p>
+    </div>
+
+    {% for loan in repaid_loans %}
+
+    <div class="history-card">
+
+        <div class="history-header">
+
+            <div>
+                <strong>
+                    {{ loan.application.product.name }}
+                </strong>
+
+                <span>
+                    Repaid
+                </span>
+            </div>
+
+            <span class="history-status">
+                Completed
+            </span>
+
+        </div>
+
+        <div class="history-details">
+
+            <div>
+                <span>Principal</span>
+                <strong>
+                    ₦{{ loan.principal|floatformat:2 }}
+                </strong>
+            </div>
+
+            <div>
+                <span>Total repayment</span>
+                <strong>
+                    ₦{{ loan.total_repayment|floatformat:2 }}
+                </strong>
+            </div>
+
+            <div>
+                <span>Total paid</span>
+                <strong>
+                    ₦{{ loan.total_paid|floatformat:2 }}
+                </strong>
+            </div>
+
+            <div>
+                <span>Outstanding</span>
+                <strong>
+                    ₦{{ loan.outstanding_balance|floatformat:2 }}
+                </strong>
+            </div>
+
+            <div>
+                <span>Repayment progress</span>
+                <strong>100%</strong>
+            </div>
+
+            <div>
+                <span>Due date</span>
+                <strong>
+                    {{ loan.due_date|date:"d M Y" }}
+                </strong>
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+
+<style>
+
+.application-card {
+    border-top: 1px solid var(--line);
+    padding: 22px 0;
+}
+
+.application-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.product-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+}
+
+.application-date {
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    margin-top: 5px;
+}
+
+.amount {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+
+/* STATUS */
+
+.status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.under-review {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status-badge.approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.active {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.status-badge.repaid {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+
+/* PROGRESS */
+
+.progress-section {
+    margin-top: 28px;
+}
+
+.progress-section h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    margin-bottom: 18px;
+}
+
+.progress-track {
+    border-left: 2px solid var(--line);
+    margin-left: 8px;
+    padding-left: 22px;
+}
+
+.progress-step {
+    position: relative;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 22px;
+    color: var(--ink-soft);
+}
+
+.progress-step:last-child {
+    margin-bottom: 0;
+}
+
+.progress-dot {
+    position: absolute;
+    left: -34px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.progress-step.completed {
+    color: var(--ink);
+}
+
+.progress-step.completed .progress-dot {
+    background: var(--indigo-950);
+    border-color: var(--indigo-950);
+    color: white;
+}
+
+.progress-step strong {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.85rem;
+}
+
+.progress-step span {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+}
+
+
+/* REVIEWER NOTE */
+
+.reviewer-note {
+    margin-top: 22px;
+    padding: 14px 16px;
+    background: #f3f5fa;
+    border-left: 3px solid var(--indigo-700);
+    border-radius: var(--radius-s);
+}
+
+.reviewer-note strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.85rem;
+}
+
+.reviewer-note p {
+    margin: 5px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+
+/* REJECTED */
+
+.rejected-message {
+    margin-top: 24px;
+    padding: 14px 16px;
+    background: #fee2e2;
+    border-left: 3px solid #991b1b;
+    border-radius: var(--radius-s);
+}
+
+.rejected-message strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.85rem;
+    color: #991b1b;
+}
+
+.rejected-message p {
+    margin: 5px 0 0;
+    color: #7f1d1d;
+    font-size: 0.9rem;
+}
+
+.view-details {
+    display: inline-block;
+    margin-top: 10px;
+    color: var(--indigo-700);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.view-details:hover {
+    text-decoration: underline;
+}
+
+/* LOAN SUMMARY */
+
+.loan-summary {
+    margin-top: 24px;
+    padding: 18px;
+    background: #f8fafc;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+}
+
+.loan-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.loan-summary-header strong {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+}
+
+.loan-summary-header span:not(.loan-status) {
+    display: block;
+    margin-top: 4px;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+}
+
+.loan-status {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #166534;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.loan-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.loan-detail {
+    padding: 12px;
+    background: var(--paper);
+    border-radius: var(--radius-s);
+}
+
+.loan-detail span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    margin-bottom: 5px;
+}
+
+.loan-detail strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+
+    .loan-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .loan-summary-header {
+        flex-direction: column;
+    }
+
+}
+
+.dashboard-summary {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin: 24px 0 30px;
+}
+
+.summary-card {
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+}
+
+.summary-card span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    margin-bottom: 8px;
+}
+
+.summary-card strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.4rem;
+}
+
+@media (max-width: 800px) {
+    .dashboard-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .dashboard-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
+.repayment-history {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+}
+
+.repayment-history h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+}
+
+.repayment-item {
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.repayment-item:last-child {
+    border-bottom: none;
+}
+
+.repayment-item > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.repayment-item strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+}
+
+.repayment-item span {
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+}
+
+.repayment-item p {
+    margin: 5px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+}
+
+.no-repayments {
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+
+    .repayment-item > div {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+}
+
+/* LOAN HISTORY */
+
+.loan-history {
+    margin-top: 42px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+}
+
+.loan-history-header {
+    margin-bottom: 18px;
+}
+
+.loan-history-header h2 {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+}
+
+.loan-history-header p {
+    margin-top: 5px;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+}
+
+.history-card {
+    padding: 18px;
+    margin-bottom: 14px;
+    background: #f8fafc;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+}
+
+.history-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 18px;
+}
+
+.history-main strong {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+}
+
+.history-main span:not(.history-status) {
+    display: block;
+    margin-top: 4px;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+}
+
+.history-status {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #d1fae5;
+    color: #065f46;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.history-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.history-details > div {
+    padding: 12px;
+    background: var(--paper);
+    border-radius: var(--radius-s);
+}
+
+.history-details span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    margin-bottom: 5px;
+}
+
+.history-details strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.88rem;
+}
+
+@media (max-width: 600px) {
+
+    .history-main {
+        flex-direction: column;
+    }
+
+    .history-details {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+.loan-history {
+    margin-top: 42px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+}
+
+.loan-history-header {
+    margin-bottom: 18px;
+}
+
+.loan-history-header h2 {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+}
+
+.loan-history-header p {
+    margin-top: 5px;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+}
+
+.history-card {
+    padding: 18px;
+    margin-bottom: 14px;
+    background: #f8fafc;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 18px;
+}
+
+.history-header strong {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+}
+
+.history-header span:not(.history-status) {
+    display: block;
+    margin-top: 4px;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+}
+
+.history-status {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #d1fae5;
+    color: #065f46;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.history-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.history-details > div {
+    padding: 12px;
+    background: var(--paper);
+    border-radius: var(--radius-s);
+}
+
+.history-details span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    margin-bottom: 5px;
+}
+
+.history-details strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.88rem;
+}
+
+@media (max-width: 600px) {
+
+    .history-header {
+        flex-direction: column;
+    }
+
+    .history-details {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
+
+{% endblock %}

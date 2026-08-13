@@ -1,0 +1,47 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Staff Applications · Yaba Capital{% endblock %}
+
+{% block content %}
+
+<div class="auth-card">
+
+    <h1>Loan Applications</h1>
+
+    <p>Staff application review</p>
+
+    {% for application in applications %}
+
+        <div>
+            <strong>
+                {{ application.borrower.business_name }}
+            </strong>
+
+            <p>
+                {{ application.product.name }}
+            </p>
+
+            <p>
+                ₦{{ application.amount_requested }}
+            </p>
+
+            <p>
+                {{ application.get_status_display }}
+            </p>
+
+            <a href="{% url 'staff_application_detail' application.id %}">
+                Review application
+            </a>
+        </div>
+
+        <hr>
+
+    {% empty %}
+
+        <p>No loan applications found.</p>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}
