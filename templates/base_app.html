@@ -1,113 +1,271 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}Yaba Capital{% endblock %}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
-<style>
-  .auth-wrap{max-width:460px;margin:80px auto;padding:0 20px;}
-  .auth-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius-m);padding:36px 32px;}
-  .auth-card h1{font-size:1.5rem;margin-bottom:8px;}
-  .auth-card p.sub{color:var(--ink-soft);font-size:0.9rem;margin-bottom:26px;}
-  .field{margin-bottom:18px;}
-  .field label{display:block;font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:600;margin-bottom:6px;}
-  .field input, .field textarea, .field select{
-    width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:var(--radius-s);
-    font-family:'Newsreader',serif;font-size:0.95rem;background:var(--paper);
-  }
-  .field input:focus, .field textarea:focus, .field select:focus{outline:none;border-color:var(--indigo-700);}
-  .errorlist{color:#b23b3b;font-size:0.82rem;margin:4px 0 0;padding:0;list-style:none;}
-  .messages{list-style:none;padding:0;margin:0 0 20px;}
-  .messages li{background:#e7f3ec;color:var(--market-green);padding:12px 16px;border-radius:var(--radius-s);font-size:0.88rem;}
-</style>
-</head>
-<body>
-<header>
-  <div class="wrap nav">
-    <a href="{% url 'home' %}" class="logo"><span class="logo-mark"></span>Yaba Capital</a>
-    <div class="nav-cta">
-      {% if user.is_authenticated %}
 
-    {% if user.is_staff %}
+    <meta charset="UTF-8">
 
-        <a
-            href="{% url 'staff_dashboard' %}"
-            class="btn btn-ghost"
-            style="color:var(--indigo-950);border-color:var(--line);"
-        >
-            Staff Dashboard
-        </a>
-
-        <a
-            href="{% url 'staff_applications' %}"
-            class="btn btn-ghost"
-            style="color:var(--indigo-950);border-color:var(--line);"
-        >
-            Applications
-        </a>
-
-        <a
-    href="{% url 'staff_loans' %}"
-    class="btn btn-ghost"
-    style="color:var(--indigo-950);border-color:var(--line);"
->
-    Loans
-</a>
-
-    {% else %}
-
-        <a
-            href="{% url 'dashboard' %}"
-            class="btn btn-ghost"
-            style="color:var(--indigo-950);border-color:var(--line);"
-        >
-            Dashboard
-        </a>
-
-    {% endif %}
-
-    <form
-        action="{% url 'logout' %}"
-        method="post"
-        style="display:inline;"
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
     >
-        {% csrf_token %}
 
-        <button
-            type="submit"
-            class="btn btn-dark"
+    <title>
+        {% block title %}Yaba Capital{% endblock %}
+    </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/style.css' %}"
+    >
+
+    <style>
+
+        .auth-wrap {
+            max-width: 460px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+
+        .auth-card {
+            background: var(--paper-raised);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-m);
+            padding: 36px 32px;
+        }
+
+        .auth-card h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .auth-card p.sub {
+            color: var(--ink-soft);
+            font-size: 0.9rem;
+            margin-bottom: 26px;
+        }
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        .field label {
+            display: block;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-s);
+            font-family: 'Newsreader', serif;
+            font-size: 0.95rem;
+            background: var(--paper);
+            box-sizing: border-box;
+        }
+
+        .field input:focus,
+        .field textarea:focus,
+        .field select:focus {
+            outline: none;
+            border-color: var(--indigo-700);
+        }
+
+        .errorlist {
+            color: #b23b3b;
+            font-size: 0.82rem;
+            margin: 4px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .messages {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px;
+        }
+
+        .messages li {
+            background: #e7f3ec;
+            color: var(--market-green);
+            padding: 12px 16px;
+            border-radius: var(--radius-s);
+            font-size: 0.88rem;
+        }
+
+    </style>
+
+    {% block extra_head %}{% endblock %}
+
+</head>
+
+<body>
+
+<header>
+
+    <div class="wrap nav">
+
+        <!-- LOGO -->
+
+        <a
+            href="{% url 'home' %}"
+            class="logo"
         >
-            Log out
-        </button>
+            <span class="logo-mark"></span>
+            Yaba Capital
+        </a>
 
-    </form>
 
-{% else %}
-        <a href="{% url 'login' %}" class="btn btn-ghost" style="color:var(--indigo-950);border-color:var(--line);">Log in</a>
-        <a href="{% url 'signup' %}" class="btn btn-dark">Sign up</a>
-      {% endif %}
+        <!-- HOMEPAGE NAVIGATION -->
+
+        {% block homepage_nav %}{% endblock %}
+
+
+        <!-- ACCOUNT NAVIGATION -->
+
+        <div class="nav-cta">
+
+            {% if user.is_authenticated %}
+
+                {% if user.is_staff %}
+
+                    <a
+                        href="{% url 'staff_dashboard' %}"
+                        class="btn btn-ghost"
+                        style="color:var(--indigo-950);border-color:var(--line);"
+                    >
+                        Staff Dashboard
+                    </a>
+
+                    <a
+                        href="{% url 'staff_applications' %}"
+                        class="btn btn-ghost"
+                        style="color:var(--indigo-950);border-color:var(--line);"
+                    >
+                        Applications
+                    </a>
+
+                    <a
+                        href="{% url 'staff_loans' %}"
+                        class="btn btn-ghost"
+                        style="color:var(--indigo-950);border-color:var(--line);"
+                    >
+                        Loans
+                    </a>
+
+                {% else %}
+
+                    <a
+                        href="{% url 'dashboard' %}"
+                        class="btn btn-ghost"
+                        style="color:var(--indigo-950);border-color:var(--line);"
+                    >
+                        Dashboard
+                    </a>
+
+                {% endif %}
+
+
+                <form
+                    action="{% url 'logout' %}"
+                    method="post"
+                    style="display:inline;"
+                >
+
+                    {% csrf_token %}
+
+                    <button
+                        type="submit"
+                        class="btn btn-dark"
+                    >
+                        Log out
+                    </button>
+
+                </form>
+
+
+            {% else %}
+
+                <a
+                    href="{% url 'login' %}"
+                    class="btn btn-ghost"
+                    style="color:var(--indigo-950);border-color:var(--line);"
+                >
+                    Log in
+                </a>
+
+                <a
+                    href="{% url 'signup' %}"
+                    class="btn btn-dark"
+                >
+                    Sign up
+                </a>
+
+                <a
+                    href="{% url 'apply' %}"
+                    class="btn btn-primary"
+                >
+                    Apply now
+                </a>
+
+            {% endif %}
+
+        </div>
+
     </div>
-  </div>
+
 </header>
 
+
 <main>
+
     {% if messages %}
+
         <ul class="messages">
+
             {% for message in messages %}
-                <li>{{ message }}</li>
+
+                <li>
+                    {{ message }}
+                </li>
+
             {% endfor %}
+
         </ul>
+
     {% endif %}
 
+
     {% block content %}{% endblock %}
+
 </main>
+
 
 <script src="{% static 'js/main.js' %}"></script>
 
+{% block extra_scripts %}{% endblock %}
+
 </body>
+
 </html>
