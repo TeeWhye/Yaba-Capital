@@ -5,9 +5,10 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 from django.contrib.auth.views import LoginView
+from django.conf import settings
 
 from .forms import SignUpForm, LoanApplicationForm, RepaymentForm
-from .models import Borrower, LoanApplication, Loan
+from .models import Borrower, LoanApplication, Loan, Repayment
 
 class CustomLoginView(LoginView):
 
@@ -558,7 +559,114 @@ def staff_application_detail(request, application_id):
                 )
 
         # --------------------------------
-        # UNKNOWN ACTION
+        # CONFIRM REPAYMENT
+        # --------------------------------
+
+        elif action == 'confirm_repayment':
+
+            repayment_id = request.POST.get(
+                'repayment_id'
+            )
+
+            try:
+                repayment = Repayment.objects.select_related(
+                    'loan',
+                    'loan__application'
+                ).get(
+                    id=repayment_id,
+                    loan__application=application
+                )
+
+            except Repayment.DoesNotExist:
+
+                messages.error(
+                    request,
+                    'Repayment not found.'
+                )
+
+            else:
+
+                if repayment.status != 'pending':
+
+                    messages.error(
+                        request,
+                        'Only pending repayments can be confirmed.'
+                    )
+
+                else:
+
+                    repayment.status = 'confirmed'
+                    repayment.confirmed_at = timezone.now()
+                    repayment.save()
+
+                    loan = repayment.loan
+
+                    # Check the balance AFTER confirmation
+                    if loan.outstanding_balance <= 0:
+
+                        loan.status = 'repaid'
+                        loan.save()
+
+                        application.status = 'repaid'
+                        application.save()
+
+                        messages.success(
+                            request,
+                            'Repayment confirmed. Loan has been fully repaid.'
+                        )
+
+                    else:
+
+                        messages.success(
+                            request,
+                            'Repayment confirmed successfully.'
+                        )
+
+        # --------------------------------
+        # REJECT REPAYMENT
+        # --------------------------------
+
+        elif action == 'reject_repayment':
+
+            repayment_id = request.POST.get(
+                'repayment_id'
+            )
+
+            try:
+                repayment = Repayment.objects.get(
+                    id=repayment_id,
+                    loan__application=application
+                )
+
+            except Repayment.DoesNotExist:
+
+                messages.error(
+                    request,
+                    'Repayment not found.'
+                )
+
+            else:
+
+                if repayment.status != 'pending':
+
+                    messages.error(
+                        request,
+                        'Only pending repayments can be rejected.'
+                    )
+
+                else:
+
+                    repayment.status = 'rejected'
+                    repayment.confirmed_at = None
+                    repayment.save()
+
+                    messages.success(
+                        request,
+                        'Repayment rejected.'
+                    )
+
+        # --------------------------------
+        # INVALID ACTION
         # --------------------------------
 
         else:
@@ -573,27 +681,35 @@ def staff_application_detail(request, application_id):
             application_id=application.id
         )
 
+    # --------------------------------
+    # GET REPAYMENTS FOR THIS LOAN
+    # --------------------------------
+
+    repayments = Repayment.objects.none()
+
+    if hasattr(application, 'loan'):
+
+        repayments = application.loan.repayments.all().order_by(
+            '-paid_at'
+        )
+
     return render(
         request,
         'loans/staff_application_detail.html',
-        {'application': application}
+        {
+            'application': application,
+            'repayments': repayments,
+        }
     )
-
 @login_required
 def record_repayment(request, loan_id):
 
-    if not request.user.is_staff:
-        messages.error(
-            request,
-            'You do not have permission to record repayments.'
-        )
-
-        return redirect('dashboard')
-
     try:
-        loan = Loan.objects.get(
-            id=loan_id
-        )
+        loan = Loan.objects.select_related(
+            'borrower',
+            'borrower__user',
+            'application'
+        ).get(id=loan_id)
 
     except Loan.DoesNotExist:
         messages.error(
@@ -601,18 +717,36 @@ def record_repayment(request, loan_id):
             'Loan not found.'
         )
 
-        return redirect('staff_applications')
+        return redirect('dashboard')
 
+    # Staff can access any loan.
+    # Borrowers can only access their own loan.
+    if not request.user.is_staff:
+
+        if loan.borrower.user != request.user:
+            messages.error(
+                request,
+                'You do not have permission to repay this loan.'
+            )
+
+            return redirect('dashboard')
+
+    # Repayments are only allowed for active loans.
     if loan.status != 'active':
+
         messages.error(
             request,
-            'Repayments can only be recorded for active loans.'
+            'Repayments can only be made for active loans.'
         )
 
-        return redirect(
-            'staff_application_detail',
-            application_id=loan.application.id
-        )
+        if request.user.is_staff:
+
+            return redirect(
+                'staff_application_detail',
+                application_id=loan.application.id
+            )
+
+        return redirect('dashboard')
 
     if request.method == 'POST':
 
@@ -637,15 +771,11 @@ def record_repayment(request, loan_id):
                         'This loan is no longer active.'
                     )
 
-                    return redirect(
-                        'staff_application_detail',
-                        application_id=loan.application.id
-                    )
+                    return redirect('dashboard')
 
-                # Re-check the repayment amount against
-                # the latest outstanding balance
                 amount = form.cleaned_data['amount']
 
+                # Re-check against the latest balance
                 if amount > loan.outstanding_balance:
 
                     form.add_error(
@@ -660,6 +790,7 @@ def record_repayment(request, loan_id):
                     repayment.loan = loan
                     repayment.save()
 
+                    # If the loan has been completely paid
                     if loan.outstanding_balance <= 0:
 
                         loan.status = 'repaid'
@@ -673,10 +804,15 @@ def record_repayment(request, loan_id):
                         'Repayment recorded successfully.'
                     )
 
-                    return redirect(
-                        'staff_application_detail',
-                        application_id=loan.application.id
-                    )
+                    # Send the user back to the appropriate dashboard
+                    if request.user.is_staff:
+
+                        return redirect(
+                            'staff_application_detail',
+                            application_id=loan.application.id
+                        )
+
+                    return redirect('dashboard')
 
     else:
 
@@ -692,3 +828,79 @@ def record_repayment(request, loan_id):
             'loan': loan,
         }
     )
+
+@login_required
+def borrower_repayment(request, loan_id):
+
+    try:
+        loan = Loan.objects.select_related(
+            'application',
+            'application__product'
+        ).get(
+            id=loan_id,
+            borrower=request.user.borrower
+        )
+
+    except Loan.DoesNotExist:
+        messages.error(
+            request,
+            'Loan not found.'
+        )
+
+        return redirect('dashboard')
+
+    if loan.status != 'active':
+        messages.error(
+            request,
+            'Repayments can only be submitted for active loans.'
+        )
+
+        return redirect('dashboard')
+
+    if loan.outstanding_balance <= 0:
+        messages.info(
+            request,
+            'This loan has already been fully repaid.'
+        )
+
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+
+        form = RepaymentForm(
+            request.POST,
+            loan=loan
+        )
+
+        if form.is_valid():
+
+            repayment = form.save(commit=False)
+
+            repayment.loan = loan
+            repayment.status = 'pending'
+            repayment.save()
+
+            messages.success(
+                request,
+                'Your repayment has been submitted and is awaiting verification.'
+            )
+
+            return redirect('dashboard')
+
+    else:
+
+        form = RepaymentForm(
+            loan=loan
+        )
+
+    return render(
+    request,
+    'loans/borrower_repayment.html',
+    {
+        'form': form,
+        'loan': loan,
+        'bank_name': settings.YABA_CAPITAL_BANK_NAME,
+        'account_name': settings.YABA_CAPITAL_ACCOUNT_NAME,
+        'account_number': settings.YABA_CAPITAL_ACCOUNT_NUMBER,
+    }
+)

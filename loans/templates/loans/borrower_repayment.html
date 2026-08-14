@@ -1,0 +1,469 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Make Repayment · Yaba Capital{% endblock %}
+
+{% block content %}
+
+<div class="auth-card repayment-page">
+
+<a href="{% url 'dashboard' %}" class="back-link">
+    ← Back to dashboard
+</a>
+
+<div class="repayment-header">
+
+    <p class="eyebrow">Loan repayment</p>
+
+    <h1>Make a repayment</h1>
+
+    <p class="sub">
+        Make a payment towards your outstanding loan balance.
+    </p>
+
+</div>
+
+
+<!-- LOAN SUMMARY -->
+
+<div class="loan-summary">
+
+    <div class="loan-summary-header">
+
+        <div>
+            <strong>{{ loan.application.product.name }}</strong>
+
+            <span>
+                Active loan
+            </span>
+        </div>
+
+        <span class="loan-status">
+            {{ loan.get_status_display }}
+        </span>
+
+    </div>
+
+
+    <div class="loan-details">
+
+        <div>
+            <span>Original principal</span>
+
+            <strong>
+                ₦{{ loan.principal|floatformat:2 }}
+            </strong>
+        </div>
+
+        <div>
+            <span>Total repayment</span>
+
+            <strong>
+                ₦{{ loan.total_repayment|floatformat:2 }}
+            </strong>
+        </div>
+
+        <div>
+            <span>Total paid</span>
+
+            <strong>
+                ₦{{ loan.total_paid|floatformat:2 }}
+            </strong>
+        </div>
+
+        <div class="outstanding">
+
+            <span>Outstanding balance</span>
+
+            <strong>
+                ₦{{ loan.outstanding_balance|floatformat:2 }}
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="repayment-bank-details">
+
+    <h2>Repayment Account</h2>
+
+    <p class="sub">
+        Please transfer your repayment to the company account below
+        before submitting your repayment.
+    </p>
+
+    <div class="bank-detail">
+
+        <span>Bank</span>
+
+        <strong>
+            {{ bank_name }}
+        </strong>
+
+    </div>
+
+    <div class="bank-detail">
+
+        <span>Account Name</span>
+
+        <strong>
+            {{ account_name }}
+        </strong>
+
+    </div>
+
+    <div class="bank-detail">
+
+        <span>Account Number</span>
+
+        <strong class="account-number">
+            {{ account_number }}
+        </strong>
+
+    </div>
+
+    <p class="bank-note">
+        After making the transfer, enter the amount you transferred
+        and your transfer reference below.
+    </p>
+
+</div>
+
+<!-- REPAYMENT FORM -->
+
+<div class="repayment-form-section">
+
+    <h2>Payment details</h2>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+
+            <div class="form-errors">
+
+                {{ form.non_field_errors }}
+
+            </div>
+
+        {% endif %}
+
+
+        <div class="form-group">
+
+            <label for="{{ form.amount.id_for_label }}">
+                Repayment amount
+            </label>
+
+            {{ form.amount }}
+
+            {% if form.amount.errors %}
+
+                <div class="field-error">
+
+                    {{ form.amount.errors }}
+
+                </div>
+
+            {% endif %}
+
+            <small>
+                Maximum repayment:
+                ₦{{ loan.outstanding_balance|floatformat:2 }}
+            </small>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="{{ form.note.id_for_label }}">
+                Note
+            </label>
+
+            {{ form.note }}
+
+            {% if form.note.errors %}
+
+                <div class="field-error">
+
+                    {{ form.note.errors }}
+
+                </div>
+
+            {% endif %}
+
+            <small>
+                Optional. You may add a note about this payment.
+            </small>
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="btn-primary repayment-button"
+        >
+            Make Repayment
+        </button>
+
+    </form>
+
+</div>
+
+</div>
+
+<style>
+
+.repayment-page {
+    max-width: 680px;
+    margin: 60px auto;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 28px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.repayment-header {
+    margin-bottom: 28px;
+}
+
+.eyebrow {
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+}
+
+.repayment-header h1 {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+}
+
+.sub {
+    margin-top: 7px;
+    color: var(--ink-soft);
+}
+
+
+/* LOAN SUMMARY */
+
+.loan-summary {
+    padding: 20px;
+    background: #f8fafc;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+}
+
+.loan-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.loan-summary-header strong {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+}
+
+.loan-summary-header span:not(.loan-status) {
+    display: block;
+    margin-top: 4px;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+}
+
+.loan-status {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.loan-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.loan-details > div {
+    padding: 13px;
+    background: var(--paper);
+    border-radius: var(--radius-s);
+}
+
+.loan-details span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    margin-bottom: 5px;
+}
+
+.loan-details strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+}
+
+.loan-details .outstanding {
+    border: 1px solid var(--indigo-700);
+}
+
+
+/* FORM */
+
+.repayment-form-section {
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+}
+
+.repayment-form-section h2 {
+    margin-bottom: 20px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 6px;
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+}
+
+.field-error,
+.form-errors {
+    margin-top: 6px;
+    color: #991b1b;
+    font-size: 0.8rem;
+}
+
+.repayment-button {
+    margin-top: 5px;
+}
+
+@media (max-width: 600px) {
+
+    .repayment-page {
+        margin: 30px 15px;
+    }
+
+    .loan-details {
+        grid-template-columns: 1fr;
+    }
+
+    .loan-summary-header {
+        flex-direction: column;
+    }
+
+}
+
+.repayment-bank-details {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: #f8fafc;
+}
+
+.repayment-bank-details h2 {
+    margin-bottom: 8px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+}
+
+.bank-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.bank-detail:last-of-type {
+    border-bottom: none;
+}
+
+.bank-detail span {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+}
+
+.bank-detail strong {
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.account-number {
+    font-size: 1.05rem !important;
+    letter-spacing: 0.04em;
+}
+
+.bank-note {
+    margin-top: 14px;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+
+    .bank-detail {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .bank-detail strong {
+        text-align: left;
+    }
+
+}
+
+</style>
+
+{% endblock %}

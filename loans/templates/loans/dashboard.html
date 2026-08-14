@@ -311,6 +311,26 @@
                     <strong>₦{{ app.loan.outstanding_balance }}</strong>
                 </div>
 
+                {% if app.loan.status == 'active' and app.loan.outstanding_balance > 0 %}
+
+    <div class="repayment-action">
+
+        <a
+            href="{% url 'borrower_repayment' app.loan.id %}"
+            class="btn btn-primary"
+        >
+            Make a repayment
+        </a>
+
+        <p>
+            You can make a repayment toward your outstanding balance.
+        </p>
+
+    </div>
+
+{% endif %}
+
+
                 <div class="loan-detail">
     <span>Repayment progress</span>
 
@@ -355,27 +375,59 @@
 
             {% for repayment in app.loan.repayments.all %}
 
-                <div class="repayment-item">
+    <div class="repayment-item">
 
-                    <div>
-                        <strong>
-                            ₦{{ repayment.amount }}
-                        </strong>
+        <div>
+            <strong>
+                ₦{{ repayment.amount|floatformat:2 }}
+            </strong>
 
-                        <span>
-                            {{ repayment.paid_at|date:"d M Y, H:i" }}
-                        </span>
-                    </div>
+            {% if repayment.status == 'pending' %}
 
-                    {% if repayment.note %}
-                        <p>
-                            {{ repayment.note }}
-                        </p>
-                    {% endif %}
+                <span class="repayment-status pending">
+                    Pending verification
+                </span>
 
-                </div>
+            {% elif repayment.status == 'confirmed' %}
 
-            {% empty %}
+                <span class="repayment-status confirmed">
+                    Confirmed
+                </span>
+
+            {% elif repayment.status == 'rejected' %}
+
+                <span class="repayment-status rejected">
+                    Rejected
+                </span>
+
+            {% endif %}
+        </div>
+
+        <span>
+            Submitted {{ repayment.paid_at|date:"d M Y, H:i" }}
+        </span>
+
+        {% if repayment.confirmed_at %}
+            <span>
+                Confirmed {{ repayment.confirmed_at|date:"d M Y, H:i" }}
+            </span>
+        {% endif %}
+
+        {% if repayment.transfer_reference %}
+            <span>
+                Reference: {{ repayment.transfer_reference }}
+            </span>
+        {% endif %}
+
+        {% if repayment.note %}
+            <p>
+                {{ repayment.note }}
+            </p>
+        {% endif %}
+
+    </div>
+
+{% empty %}
 
                 <p class="no-repayments">
                     No repayments have been recorded yet.
@@ -411,102 +463,6 @@
 
 
 <!-- LOAN HISTORY -->
-
-{% if repaid_loans %}
-
-    <div class="loan-history">
-
-        <div class="loan-history-header">
-
-            <div>
-                <h2>Loan history</h2>
-
-                <p>
-                    Your completed loans and repayment records.
-                </p>
-            </div>
-
-        </div>
-
-
-        {% for loan in repaid_loans %}
-
-            <div class="history-card">
-
-                <div class="history-main">
-
-                    <div>
-                        <strong>
-                            {{ loan.application.product.name }}
-                        </strong>
-
-                        <span>
-                            Repaid
-                        </span>
-                    </div>
-
-                    <span class="history-status">
-                        Completed
-                    </span>
-
-                </div>
-
-
-                <div class="history-details">
-
-                    <div>
-                        <span>Principal</span>
-                        <strong>
-                            ₦{{ loan.principal }}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Total repayment</span>
-                        <strong>
-                            ₦{{ loan.total_repayment }}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Total paid</span>
-                        <strong>
-                            ₦{{ loan.total_paid }}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Outstanding</span>
-                        <strong>
-                            ₦{{ loan.outstanding_balance }}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Repaid on</span>
-                        <strong>
-                            {{ loan.application.updated_at|date:"d M Y" }}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Repayment progress</span>
-                        <strong>
-                            100%
-                        </strong>
-                    </div>
-
-                </div>
-
-            </div>
-
-        {% endfor %}
-
-    </div>
-
-{% endif %}
-
-</div>
 
 {% if repaid_loans %}
 
@@ -1064,10 +1020,6 @@
 
 @media (max-width: 600px) {
 
-    .history-main {
-        flex-direction: column;
-    }
-
     .history-details {
         grid-template-columns: 1fr;
     }
@@ -1169,6 +1121,42 @@
         grid-template-columns: 1fr;
     }
 
+}
+
+.repayment-action {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+}
+
+.repayment-action p {
+    margin: 8px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+}
+
+.repayment-status {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.repayment-status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.repayment-status.confirmed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.repayment-status.rejected {
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 </style>

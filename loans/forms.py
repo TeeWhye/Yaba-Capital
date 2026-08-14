@@ -38,22 +38,73 @@ class SignUpForm(UserCreationForm):
 
 class LoanApplicationForm(forms.ModelForm):
 
+    bank_name = forms.CharField(
+        required=True,
+        label='Bank name',
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'Enter your bank name',
+            }
+        )
+    )
+
+    account_name = forms.CharField(
+        required=True,
+        label='Account name',
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'Enter the account name',
+            }
+        )
+    )
+
+    account_number = forms.CharField(
+        required=True,
+        label='Account number',
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'Enter your 10-digit account number',
+                'inputmode': 'numeric',
+                'maxlength': '10',
+            }
+        )
+    )
+
+    nin_document = forms.FileField(
+        required=True,
+        label='NIN document',
+        widget=forms.FileInput(
+            attrs={
+                'accept': '.pdf,.jpg,.jpeg,.png',
+            }
+        ),
+        help_text=(
+            'Upload a clear copy of your NIN document. '
+            'Accepted formats: PDF, JPG, JPEG or PNG.'
+        )
+    )
+
     class Meta:
         model = LoanApplication
         fields = [
             'product',
             'amount_requested',
             'purpose',
-            'id_document'
+            'bank_name',
+            'account_name',
+            'account_number',
+            'nin_document',
         ]
 
     def clean(self):
+
         cleaned_data = super().clean()
 
         product = cleaned_data.get('product')
         amount = cleaned_data.get('amount_requested')
 
         if product and amount:
+
             if (
                 amount < product.min_amount
                 or amount > product.max_amount
@@ -66,6 +117,60 @@ class LoanApplicationForm(forms.ModelForm):
                 )
 
         return cleaned_data
+
+    def clean_account_number(self):
+
+        account_number = self.cleaned_data.get(
+            'account_number'
+        )
+
+        if not account_number:
+            raise forms.ValidationError(
+                'Account number is required.'
+            )
+
+        if not account_number.isdigit():
+            raise forms.ValidationError(
+                'Account number must contain only numbers.'
+            )
+
+        if len(account_number) != 10:
+            raise forms.ValidationError(
+                'Account number must be exactly 10 digits.'
+            )
+
+        return account_number
+
+    def clean_nin_document(self):
+
+        nin_document = self.cleaned_data.get(
+            'nin_document'
+        )
+
+        if not nin_document:
+            raise forms.ValidationError(
+                'NIN document is required.'
+            )
+
+        allowed_extensions = [
+            '.pdf',
+            '.jpg',
+            '.jpeg',
+            '.png',
+        ]
+
+        filename = nin_document.name.lower()
+
+        if not any(
+            filename.endswith(extension)
+            for extension in allowed_extensions
+        ):
+            raise forms.ValidationError(
+                'Please upload a valid NIN document '
+                'in PDF, JPG, JPEG or PNG format.'
+            )
+
+        return nin_document
 
 
 class RepaymentForm(forms.ModelForm):

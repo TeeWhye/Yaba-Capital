@@ -40,4 +40,10 @@ path(
     views.record_repayment,
     name='record_repayment'
 ),
+
+path(
+    'my-loan/<int:loan_id>/repay/',
+    views.borrower_repayment,
+    name='borrower_repayment'
+),
 ]

@@ -13,18 +13,6 @@ class Borrower(models.Model):
     address = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-@property
-def total_paid(self):
-    return sum(
-        repayment.amount
-        for repayment in self.repayments.all()
-    )
-
-
-@property
-def outstanding_balance(self):
-    return self.total_repayment - self.total_paid
-
     def __str__(self):
         return f'{self.business_name} ({self.user.username})'
 
@@ -86,8 +74,29 @@ class LoanApplication(models.Model):
 
     purpose = models.TextField()
 
-    id_document = models.FileField(
-        upload_to='id_documents/'
+    # Bank details for loan disbursement
+    bank_name = models.CharField(
+    max_length=100,
+    blank=True,
+    null=True
+)
+
+    account_name = models.CharField(
+    max_length=200,
+    blank=True,
+    null=True
+)
+
+    account_number = models.CharField(
+    max_length=10,
+    blank=True,
+    null=True
+    )
+
+    nin_document = models.FileField(
+    upload_to='nin_documents/',
+    blank=True,
+    null=True
     )
 
     status = models.CharField(
@@ -113,7 +122,6 @@ class LoanApplication(models.Model):
 
     def __str__(self):
         return f'{self.borrower} - {self.product} - {self.status}'
-
 
 class Loan(models.Model):
     STATUS_CHOICES = [
@@ -166,7 +174,9 @@ class Loan(models.Model):
     def total_paid(self):
         return sum(
             repayment.amount
-            for repayment in self.repayments.all()
+            for repayment in self.repayments.filter(
+                status='confirmed'
+            )
         )
 
     @property
@@ -178,6 +188,13 @@ class Loan(models.Model):
 
 
 class Repayment(models.Model):
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending Verification'),
+        ('confirmed', 'Confirmed'),
+        ('rejected', 'Rejected'),
+    ]
+
     loan = models.ForeignKey(
         Loan,
         on_delete=models.PROTECT,
@@ -189,8 +206,24 @@ class Repayment(models.Model):
         decimal_places=2
     )
 
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+
+    transfer_reference = models.CharField(
+        max_length=100,
+        blank=True
+    )
+
     paid_at = models.DateTimeField(
         auto_now_add=True
+    )
+
+    confirmed_at = models.DateTimeField(
+        null=True,
+        blank=True
     )
 
     note = models.TextField(
@@ -198,4 +231,8 @@ class Repayment(models.Model):
     )
 
     def __str__(self):
-        return f'{self.loan.borrower} - ₦{self.amount}'
+        return (
+            f'{self.loan.borrower} - '
+            f'₦{self.amount} - '
+            f'{self.get_status_display()}'
+        )

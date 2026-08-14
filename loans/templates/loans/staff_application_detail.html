@@ -99,6 +99,87 @@
     </div>
 
 
+    <!-- DISBURSEMENT & IDENTITY -->
+
+    <div class="detail-section">
+
+        <h2>Disbursement &amp; identity</h2>
+
+        <div class="detail-grid">
+
+            <div class="detail-item">
+                <span>Bank name</span>
+
+                <strong>
+                    {% if application.bank_name %}
+                        {{ application.bank_name }}
+                    {% else %}
+                        Not provided
+                    {% endif %}
+                </strong>
+            </div>
+
+
+            <div class="detail-item">
+                <span>Account name</span>
+
+                <strong>
+                    {% if application.account_name %}
+                        {{ application.account_name }}
+                    {% else %}
+                        Not provided
+                    {% endif %}
+                </strong>
+            </div>
+
+
+            <div class="detail-item">
+                <span>Account number</span>
+
+                <strong>
+                    {% if application.account_number %}
+                        {{ application.account_number }}
+                    {% else %}
+                        Not provided
+                    {% endif %}
+                </strong>
+            </div>
+
+
+            <div class="detail-item">
+                <span>NIN document</span>
+
+                {% if application.nin_document %}
+
+                    <a
+                        href="{{ application.nin_document.url }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="document-link"
+                    >
+                        View NIN document
+                    </a>
+
+                {% else %}
+
+                    <strong>
+                        Not provided
+                    </strong>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <p class="sensitive-note">
+            This information contains sensitive borrower identity and
+            banking information. Handle it securely.
+        </p>
+
+    </div>
+
+
     <!-- REVIEW ACTIONS -->
 
     <div class="detail-section">
@@ -165,66 +246,66 @@
 
         {% elif application.status == 'approved' %}
 
-              <p>
-        This application has been approved and is ready for disbursement.
-    </p>
-
-    <form method="POST" style="margin-top: 18px;">
-
-        {% csrf_token %}
-
-        <button
-            type="submit"
-            name="action"
-            value="disbursed"
-            class="btn-primary"
-        >
-            Disburse Loan
-        </button>
-
-    </form>
-
-    {% elif application.status == 'active' %}
-
-    <p>
-        This loan has been disbursed and is currently active.
-    </p>
-
-    {% if application.loan %}
-
-        <div style="margin-top: 18px;">
-
             <p>
-                <strong>Disbursed on:</strong>
-
-                {% if application.loan.disbursed_at %}
-                    {{ application.loan.disbursed_at|date:"d M Y, H:i" }}
-                {% else %}
-                    Not available
-                {% endif %}
+                This application has been approved and is ready for
+                disbursement.
             </p>
 
+            <form method="POST" style="margin-top: 18px;">
+
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    name="action"
+                    value="disbursed"
+                    class="btn-primary"
+                >
+                    Disburse Loan
+                </button>
+
+            </form>
+
+        {% elif application.status == 'active' %}
+
             <p>
-                <strong>Outstanding balance:</strong>
-                ₦{{ application.loan.outstanding_balance|floatformat:2 }}
+                This loan has been disbursed and is currently active.
             </p>
 
-        </div>
+            {% if application.loan %}
 
-        <a
-            href="{% url 'record_repayment' application.loan.id %}"
-            class="btn-primary"
-            style="
-                display: inline-block;
-                margin-top: 18px;
-                text-decoration: none;
-            "
-        >
-            Record Repayment
-        </a>
+                <div style="margin-top: 18px;">
 
-    {% endif %}
+                    <p>
+                        <strong>Disbursed on:</strong>
 
+                        {% if application.loan.disbursed_at %}
+                            {{ application.loan.disbursed_at|date:"d M Y, H:i" }}
+                        {% else %}
+                            Not available
+                        {% endif %}
+                    </p>
+
+                    <p>
+                        <strong>Outstanding balance:</strong>
+                        ₦{{ application.loan.outstanding_balance|floatformat:2 }}
+                    </p>
+
+                </div>
+
+                <a
+                    href="{% url 'record_repayment' application.loan.id %}"
+                    class="btn-primary"
+                    style="
+                        display: inline-block;
+                        margin-top: 18px;
+                        text-decoration: none;
+                    "
+                >
+                    Record Repayment
+                </a>
+
+            {% endif %}
 
         {% elif application.status == 'rejected' %}
 
@@ -235,6 +316,165 @@
         {% endif %}
 
     </div>
+
+    <!-- REPAYMENT VERIFICATION -->
+
+{% if application.loan %}
+
+    <div class="detail-section">
+
+        <h2>Repayment verification</h2>
+
+        {% if repayments %}
+
+            {% for repayment in repayments %}
+
+                <div class="repayment-card">
+
+                    <div class="repayment-header">
+
+                        <div>
+                            <span class="detail-label">
+                                Repayment amount
+                            </span>
+
+                            <strong class="repayment-amount">
+                                ₦{{ repayment.amount|floatformat:2 }}
+                            </strong>
+                        </div>
+
+                        <span class="status-badge {{ repayment.status }}">
+                            {{ repayment.get_status_display }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="repayment-details">
+
+                        <div>
+                            <span>Submitted</span>
+
+                            <strong>
+                                {{ repayment.paid_at|date:"d M Y, H:i" }}
+                            </strong>
+                        </div>
+
+
+                        {% if repayment.transfer_reference %}
+
+                            <div>
+                                <span>Transfer reference</span>
+
+                                <strong>
+                                    {{ repayment.transfer_reference }}
+                                </strong>
+                            </div>
+
+                        {% endif %}
+
+
+                        {% if repayment.note %}
+
+                            <div class="full-width">
+
+                                <span>Borrower note</span>
+
+                                <strong>
+                                    {{ repayment.note }}
+                                </strong>
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    {% if repayment.status == 'pending' %}
+
+                        <div class="repayment-actions">
+
+                            <form method="POST">
+
+                                {% csrf_token %}
+
+                                <input
+                                    type="hidden"
+                                    name="repayment_id"
+                                    value="{{ repayment.id }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    name="action"
+                                    value="confirm_repayment"
+                                    class="btn-primary"
+                                >
+                                    Confirm Payment
+                                </button>
+
+                            </form>
+
+
+                            <form method="POST">
+
+                                {% csrf_token %}
+
+                                <input
+                                    type="hidden"
+                                    name="repayment_id"
+                                    value="{{ repayment.id }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    name="action"
+                                    value="reject_repayment"
+                                    class="btn-danger"
+                                >
+                                    Reject Payment
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    {% elif repayment.status == 'confirmed' %}
+
+                        <p class="repayment-confirmed">
+
+                            Confirmed
+
+                            {% if repayment.confirmed_at %}
+                                on {{ repayment.confirmed_at|date:"d M Y, H:i" }}
+                            {% endif %}
+
+                        </p>
+
+                    {% elif repayment.status == 'rejected' %}
+
+                        <p class="repayment-rejected">
+                            This repayment was rejected.
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p class="sub">
+                No repayments have been submitted for this loan.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+{% endif %}
 
 
     <!-- REVIEWER NOTE -->
@@ -393,6 +633,24 @@
     grid-column: 1 / -1;
 }
 
+.document-link {
+    color: var(--indigo-700);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.document-link:hover {
+    text-decoration: underline;
+}
+
+.sensitive-note {
+    margin-top: 18px;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
 textarea {
     width: 100%;
     box-sizing: border-box;
@@ -469,6 +727,92 @@ textarea {
     }
 
     .review-actions {
+        flex-direction: column;
+    }
+
+}
+
+.repayment-card {
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    margin-bottom: 16px;
+}
+
+.repayment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.repayment-amount {
+    display: block;
+    margin-top: 5px;
+    font-size: 1.1rem;
+}
+
+.repayment-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.repayment-details > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.repayment-details span {
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+}
+
+.repayment-details strong {
+    font-size: 0.88rem;
+}
+
+.repayment-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.repayment-confirmed {
+    margin-top: 18px;
+    color: #166534;
+    font-size: 0.85rem;
+}
+
+.repayment-rejected {
+    margin-top: 18px;
+    color: #991b1b;
+    font-size: 0.85rem;
+}
+
+.status-badge.confirmed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+@media (max-width: 600px) {
+
+    .repayment-header {
+        flex-direction: column;
+    }
+
+    .repayment-details {
+        grid-template-columns: 1fr;
+    }
+
+    .repayment-actions {
         flex-direction: column;
     }
 
