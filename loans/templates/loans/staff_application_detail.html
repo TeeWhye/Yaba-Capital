@@ -146,29 +146,51 @@
             </div>
 
 
-            <div class="detail-item">
-                <span>NIN document</span>
+            <div class="detail-item nin-document-item">
 
-                {% if application.nin_document %}
+    <span>NIN document</span>
 
-                    <a
-                        href="{{ application.nin_document.url }}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="document-link"
-                    >
-                        View NIN document
-                    </a>
+    {% if application.nin_document %}
 
-                {% else %}
+        {% if ".jpg" in application.nin_document.name|lower or ".jpeg" in application.nin_document.name|lower or ".png" in application.nin_document.name|lower %}
 
-                    <strong>
-                        Not provided
-                    </strong>
+            <img
+                src="{{ application.nin_document.url }}"
+                alt="NIN document for {{ application.borrower.business_name }}"
+                class="nin-preview"
+            >
 
-                {% endif %}
+            <a
+                href="{{ application.nin_document.url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="document-link"
+            >
+                Open full image
+            </a>
 
-            </div>
+        {% else %}
+
+            <a
+                href="{{ application.nin_document.url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="document-link"
+            >
+                Open NIN document
+            </a>
+
+        {% endif %}
+
+    {% else %}
+
+        <strong>
+            Not provided
+        </strong>
+
+    {% endif %}
+
+</div>
 
         </div>
 
@@ -816,6 +838,22 @@ textarea {
         flex-direction: column;
     }
 
+}
+
+.nin-document-item {
+    grid-column: 1 / -1;
+}
+
+.nin-preview {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+    max-height: 600px;
+    object-fit: contain;
+    margin-top: 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: #f8fafc;
 }
 
 </style>

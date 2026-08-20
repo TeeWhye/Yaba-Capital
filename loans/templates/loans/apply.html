@@ -1,21 +1,316 @@
 {% extends 'base_app.html' %}
+
 {% block title %}Apply for a loan · Yaba Capital{% endblock %}
+
 {% block content %}
+
 <div class="auth-card">
+
   <h1>Apply for a loan</h1>
-  <p class="sub">Tell us a bit about what you need — most decisions come back within a working day.</p>
+
+  <p class="sub">
+    Tell us a bit about what you need — most decisions come back within a working day.
+  </p>
+
   <form method="post" enctype="multipart/form-data" novalidate>
+
     {% csrf_token %}
-    {% for field in form %}
-      <div class="field">
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
-        {% if field.errors %}
-          <ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+
+    {% if form.non_field_errors %}
+      <ul class="errorlist">
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+
+    <!-- Loan Product -->
+    <!-- Loan Product -->
+<div class="field">
+
+  <label for="{{ form.product.id_for_label }}">
+    {{ form.product.label }}
+  </label>
+
+  <select
+    name="{{ form.product.html_name }}"
+    id="{{ form.product.id_for_label }}"
+    required
+  >
+    <option value="">---------</option>
+
+    {% for product in form.product.field.queryset %}
+      <option
+        value="{{ product.id }}"
+        data-min="{{ product.min_amount }}"
+        data-max="{{ product.max_amount }}"
+        {% if form.product.value|stringformat:"s" == product.id|stringformat:"s" %}
+          selected
         {% endif %}
-      </div>
+      >
+        {{ product.name }}
+      </option>
     {% endfor %}
-    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Submit application</button>
-  </form>
+
+  </select>
+
+  <div
+    id="loan-range"
+    style="
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #f5f7fa;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #555;
+      display: none;
+    "
+  >
+    <strong>Available loan range:</strong>
+    <span id="range-text"></span>
+  </div>
+
+  {% if form.product.errors %}
+    <ul class="errorlist">
+      {% for error in form.product.errors %}
+        <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
 </div>
+
+    <!-- Loan Amount -->
+    <div class="field">
+
+      <label for="{{ form.amount_requested.id_for_label }}">
+        {{ form.amount_requested.label }}
+      </label>
+
+      {{ form.amount_requested }}
+
+      <div
+        id="amount-error"
+        style="
+          margin-top: 6px;
+          color: #b42318;
+          font-size: 14px;
+          display: none;
+        "
+      ></div>
+
+      {% if form.amount_requested.errors %}
+        <ul class="errorlist">
+          {% for error in form.amount_requested.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+    </div>
+
+
+    <!-- Remaining fields -->
+    {% for field in form %}
+
+      {% if field.name != 'product' and field.name != 'amount_requested' %}
+
+        <div class="field">
+
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+
+          {{ field }}
+
+          {% if field.help_text %}
+            <small class="help-text">
+              {{ field.help_text }}
+            </small>
+          {% endif %}
+
+          {% if field.errors %}
+            <ul class="errorlist">
+              {% for error in field.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+        </div>
+
+      {% endif %}
+
+    {% endfor %}
+
+
+    <button
+      type="submit"
+      class="btn btn-primary"
+      style="width:100%;justify-content:center;"
+    >
+      Submit application
+    </button>
+
+  </form>
+
+</div>
+
+
+<script>
+
+  const productSelect = document.getElementById(
+    '{{ form.product.id_for_label }}'
+  );
+
+  const amountInput = document.getElementById(
+    '{{ form.amount_requested.id_for_label }}'
+  );
+
+  const rangeBox = document.getElementById('loan-range');
+  const rangeText = document.getElementById('range-text');
+  const amountError = document.getElementById('amount-error');
+
+
+  function formatCurrency(amount) {
+
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount);
+
+  }
+
+
+  function updateLoanRange() {
+
+    const selectedOption =
+      productSelect.options[productSelect.selectedIndex];
+
+
+    if (
+      !selectedOption ||
+      !selectedOption.dataset.min ||
+      !selectedOption.dataset.max
+    ) {
+
+      rangeBox.style.display = 'none';
+
+      amountInput.removeAttribute('min');
+      amountInput.removeAttribute('max');
+
+      return;
+
+    }
+
+
+    const minAmount =
+      parseFloat(selectedOption.dataset.min);
+
+    const maxAmount =
+      parseFloat(selectedOption.dataset.max);
+
+
+    rangeText.textContent =
+      `${formatCurrency(minAmount)} – ${formatCurrency(maxAmount)}`;
+
+    rangeBox.style.display = 'block';
+
+
+    amountInput.min = minAmount;
+    amountInput.max = maxAmount;
+
+
+    validateAmount();
+
+  }
+
+
+  function validateAmount() {
+
+    const selectedOption =
+      productSelect.options[productSelect.selectedIndex];
+
+
+    if (
+      !selectedOption ||
+      !selectedOption.dataset.min ||
+      !selectedOption.dataset.max
+    ) {
+
+      amountError.style.display = 'none';
+
+      return true;
+
+    }
+
+
+    const minAmount =
+      parseFloat(selectedOption.dataset.min);
+
+    const maxAmount =
+      parseFloat(selectedOption.dataset.max);
+
+    const amount =
+      parseFloat(amountInput.value);
+
+
+    if (isNaN(amount)) {
+
+      amountError.style.display = 'none';
+
+      return true;
+
+    }
+
+
+    if (amount < minAmount) {
+
+      amountError.textContent =
+        `The minimum loan amount is ${formatCurrency(minAmount)}.`;
+
+      amountError.style.display = 'block';
+
+      return false;
+
+    }
+
+
+    if (amount > maxAmount) {
+
+      amountError.textContent =
+        `The maximum loan amount is ${formatCurrency(maxAmount)}.`;
+
+      amountError.style.display = 'block';
+
+      return false;
+
+    }
+
+
+    amountError.style.display = 'none';
+
+    return true;
+
+  }
+
+
+  productSelect.addEventListener(
+    'change',
+    updateLoanRange
+  );
+
+
+  amountInput.addEventListener(
+    'input',
+    validateAmount
+  );
+
+
+  updateLoanRange();
+
+</script>
 {% endblock %}

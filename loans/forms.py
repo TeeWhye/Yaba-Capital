@@ -96,6 +96,17 @@ class LoanApplicationForm(forms.ModelForm):
             'nin_document',
         ]
 
+        def __init__(self, *args, **kwargs):
+         super().__init__(*args, **kwargs)
+
+        # Show each product's loan range in the product dropdown
+         self.fields['product'].label_from_instance = (
+            lambda product:
+            f'{product.name} '
+            f'(₦{product.min_amount:,.2f} - '
+            f'₦{product.max_amount:,.2f})'
+        )
+
     def clean(self):
 
         cleaned_data = super().clean()
