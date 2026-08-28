@@ -6,6 +6,15 @@ from django.utils import timezone
 from django.db import transaction
 from django.contrib.auth.views import LoginView
 from django.conf import settings
+import uuid
+from decimal import Decimal
+from django.urls import reverse
+from .paystack import initialize_payment, verify_payment
+import hashlib
+import hmac
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from .forms import SignUpForm, LoanApplicationForm, RepaymentForm
 from .models import Borrower, LoanApplication, Loan, Repayment
@@ -831,7 +840,6 @@ def record_repayment(request, loan_id):
 
 @login_required
 def borrower_repayment(request, loan_id):
-
     try:
         loan = Loan.objects.select_related(
             'application',
@@ -840,13 +848,11 @@ def borrower_repayment(request, loan_id):
             id=loan_id,
             borrower=request.user.borrower
         )
-
     except Loan.DoesNotExist:
         messages.error(
             request,
             'Loan not found.'
         )
-
         return redirect('dashboard')
 
     if loan.status != 'active':
@@ -854,7 +860,6 @@ def borrower_repayment(request, loan_id):
             request,
             'Repayments can only be submitted for active loans.'
         )
-
         return redirect('dashboard')
 
     if loan.outstanding_balance <= 0:
@@ -862,45 +867,336 @@ def borrower_repayment(request, loan_id):
             request,
             'This loan has already been fully repaid.'
         )
-
         return redirect('dashboard')
 
     if request.method == 'POST':
-
         form = RepaymentForm(
             request.POST,
             loan=loan
         )
 
         if form.is_valid():
+            amount = form.cleaned_data['amount']
+            note = form.cleaned_data.get('note', '')
 
-            repayment = form.save(commit=False)
+            reference = f"YABA-{loan.id}-{uuid.uuid4().hex[:12].upper()}"
 
-            repayment.loan = loan
-            repayment.status = 'pending'
-            repayment.save()
-
-            messages.success(
-                request,
-                'Your repayment has been submitted and is awaiting verification.'
+            callback_url = request.build_absolute_uri(
+                reverse('paystack_callback')
             )
 
-            return redirect('dashboard')
+            try:
+                response = initialize_payment(
+                    email=request.user.email,
+                    amount=amount,
+                    reference=reference,
+                    callback_url=callback_url,
+                    metadata={
+                        'loan_id': loan.id,
+                        'borrower_id': loan.borrower.id,
+                        'amount': str(amount),
+                        'note': note,
+                    },
+                )
+
+                if response.get('status') and response.get('data'):
+                    authorization_url = response['data']['authorization_url']
+
+                    return redirect(authorization_url)
+
+                messages.error(
+                    request,
+                    'Unable to initialize payment with Paystack.'
+                )
+
+            except Exception:
+                messages.error(
+                    request,
+                    'Something went wrong while connecting to Paystack. Please try again.'
+
+                )
 
     else:
-
         form = RepaymentForm(
             loan=loan
         )
 
     return render(
-    request,
-    'loans/borrower_repayment.html',
-    {
-        'form': form,
-        'loan': loan,
-        'bank_name': settings.YABA_CAPITAL_BANK_NAME,
-        'account_name': settings.YABA_CAPITAL_ACCOUNT_NAME,
-        'account_number': settings.YABA_CAPITAL_ACCOUNT_NUMBER,
-    }
-)
+        request,
+        'loans/borrower_repayment.html',
+        {
+            'form': form,
+            'loan': loan,
+            'bank_name': settings.YABA_CAPITAL_BANK_NAME,
+            'account_name': settings.YABA_CAPITAL_ACCOUNT_NAME,
+            'account_number': settings.YABA_CAPITAL_ACCOUNT_NUMBER,
+        }
+    )
+
+@login_required
+def paystack_callback(request):
+    reference = request.GET.get('reference')
+
+    if not reference:
+        messages.error(
+            request,
+            'No payment reference was provided.'
+        )
+        return redirect('dashboard')
+
+    try:
+        response = verify_payment(reference)
+
+        if not response.get('status'):
+            messages.error(
+                request,
+                'Unable to verify this payment.'
+            )
+            return redirect('dashboard')
+
+        payment_data = response.get('data', {})
+
+        if payment_data.get('status') != 'success':
+            messages.error(
+                request,
+                'Payment was not successful.'
+            )
+            return redirect('dashboard')
+
+        amount_paid = Decimal(payment_data.get('amount', 0)) / Decimal('100')
+
+        metadata = payment_data.get('metadata') or {}
+
+        loan_id = metadata.get('loan_id')
+
+        if not loan_id:
+            messages.error(
+                request,
+                'Payment information is incomplete.'
+            )
+            return redirect('dashboard')
+
+        try:
+            loan = Loan.objects.select_related(
+                'application',
+                'borrower',
+                'borrower__user'
+            ).get(
+                id=loan_id
+            )
+        except Loan.DoesNotExist:
+            messages.error(
+                request,
+                'Loan associated with this payment was not found.'
+            )
+            return redirect('dashboard')
+
+        # Make sure this payment belongs to the logged-in borrower.
+        if loan.borrower.user != request.user:
+            messages.error(
+                request,
+                'You do not have permission to access this payment.'
+            )
+            return redirect('dashboard')
+
+        # Make sure the loan is still active.
+        if loan.status != 'active':
+            messages.error(
+                request,
+                'This loan is no longer active.'
+            )
+            return redirect('dashboard')
+
+        # Make sure Paystack's amount matches the outstanding balance rules.
+        if amount_paid <= 0:
+            messages.error(
+                request,
+                'Invalid payment amount.'
+            )
+            return redirect('dashboard')
+
+        if amount_paid > loan.outstanding_balance:
+            messages.error(
+                request,
+                'The payment amount exceeds the outstanding balance.'
+            )
+            return redirect('dashboard')
+
+        # Prevent duplicate processing.
+        if Repayment.objects.filter(
+            paystack_reference=reference
+        ).exists():
+            messages.info(
+                request,
+                'This payment has already been recorded.'
+            )
+            return redirect('dashboard')
+
+        repayment = Repayment.objects.create(
+            loan=loan,
+            amount=amount_paid,
+            status='confirmed',
+            paystack_reference=reference,
+            confirmed_at=timezone.now(),
+            note='Payment completed through Paystack.',
+        )
+
+        if loan.outstanding_balance <= 0:
+            loan.status = 'repaid'
+            loan.save()
+
+            loan.application.status = 'repaid'
+            loan.application.save()
+
+            messages.success(
+                request,
+                'Payment successful. Your loan has been fully repaid.'
+            )
+        else:
+            messages.success(
+                request,
+                f'Payment of ₦{amount_paid:,.2f} was successful.'
+            )
+
+        return redirect('dashboard')
+
+    except Exception:
+        messages.error(
+            request,
+            'Something went wrong while verifying your payment.'
+        )
+        return redirect('dashboard')
+
+@csrf_exempt
+def paystack_webhook(request):
+    if request.method != 'POST':
+        return JsonResponse(
+            {'status': False, 'message': 'Method not allowed'},
+            status=405
+        )
+
+    signature = request.headers.get('x-paystack-signature')
+
+    if not signature:
+        return JsonResponse(
+            {'status': False, 'message': 'Missing signature'},
+            status=401
+        )
+
+    expected_signature = hmac.new(
+        settings.PAYSTACK_SECRET_KEY.encode('utf-8'),
+        request.body,
+        hashlib.sha512
+    ).hexdigest()
+
+    if not hmac.compare_digest(
+        signature,
+        expected_signature
+    ):
+        return JsonResponse(
+            {'status': False, 'message': 'Invalid signature'},
+            status=401
+        )
+
+    import json
+
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {'status': False, 'message': 'Invalid JSON'},
+            status=400
+        )
+
+    event = payload.get('event')
+    data = payload.get('data', {})
+
+    if event != 'charge.success':
+        return JsonResponse(
+            {'status': True, 'message': 'Event received'}
+        )
+
+    # Prevent duplicate payments from being recorded.
+    reference = data.get('reference')
+
+    if not reference:
+        return JsonResponse(
+            {'status': False, 'message': 'Missing payment reference'},
+            status=400
+        )
+
+    if Repayment.objects.filter(
+        paystack_reference=reference
+    ).exists():
+        return JsonResponse(
+            {'status': True, 'message': 'Payment already processed'}
+        )
+
+    metadata = data.get('metadata') or {}
+    loan_id = metadata.get('loan_id')
+
+    if not loan_id:
+        return JsonResponse(
+            {'status': False, 'message': 'Missing loan information'},
+            status=400
+        )
+
+    try:
+        loan = Loan.objects.select_related(
+            'application',
+            'borrower'
+        ).get(id=loan_id)
+
+    except Loan.DoesNotExist:
+        return JsonResponse(
+            {'status': False, 'message': 'Loan not found'},
+            status=404
+        )
+
+    if loan.status != 'active':
+        return JsonResponse(
+            {'status': False, 'message': 'Loan is not active'},
+            status=400
+        )
+
+    amount_paid = (
+        Decimal(str(data.get('amount', 0))) / Decimal('100')
+    )
+
+    if amount_paid <= 0:
+        return JsonResponse(
+            {'status': False, 'message': 'Invalid payment amount'},
+            status=400
+        )
+
+    if amount_paid > loan.outstanding_balance:
+        return JsonResponse(
+            {
+                'status': False,
+                'message': 'Payment exceeds outstanding balance'
+            },
+            status=400
+        )
+
+    repayment = Repayment.objects.create(
+        loan=loan,
+        amount=amount_paid,
+        status='confirmed',
+        paystack_reference=reference,
+        confirmed_at=timezone.now(),
+        note='Payment completed through Paystack.',
+    )
+
+    if loan.outstanding_balance <= 0:
+        loan.status = 'repaid'
+        loan.save()
+
+        loan.application.status = 'repaid'
+        loan.application.save()
+
+    return JsonResponse(
+        {
+            'status': True,
+            'message': 'Payment processed successfully'
+        }
+    )

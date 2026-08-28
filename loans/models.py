@@ -212,10 +212,12 @@ class Repayment(models.Model):
         default='pending'
     )
 
-    transfer_reference = models.CharField(
-        max_length=100,
-        blank=True
-    )
+    paystack_reference = models.CharField(
+    max_length=100,
+    unique=True,
+    null=True,
+    blank=True
+)
 
     paid_at = models.DateTimeField(
         auto_now_add=True
